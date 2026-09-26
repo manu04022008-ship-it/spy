@@ -1,0 +1,15 @@
+ECDAT deployment checklist
+
+1. Extract this ZIP.
+2. Open the extracted folder. app.py and scanner.py should be at the top level.
+3. Keep the scanners folder at the same level as app.py.
+4. Upload/commit all contents to the ROOT of the GitHub repository (not inside an extra nested project folder).
+5. In Streamlit Community Cloud choose:
+   Repository: your GitHub repository
+   Branch: main
+   Main file: app.py
+6. Deploy. If it fails, open Manage app > Logs and inspect the first ModuleNotFoundError or ImportError.
+
+Cloud limitations:
+- Use ZIP Archive for repository scanning. Your computer's local folder path is not available to the hosted app.
+- Live Docker scanning needs a Docker Engine and may not work on Streamlit Community Cloud.
