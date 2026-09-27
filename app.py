@@ -3,8 +3,27 @@ import tempfile
 import zipfile
 import streamlit as st
 
-# Core scanner imports
-from repository_scanner import open_folder_dialog, scan_repository
+# Safe cross-platform folder picker defined internally
+# (Prevents missing function errors in repository_scanner.py)
+def safe_open_folder_dialog():
+    try:
+        import tkinter as tk
+        from tkinter import filedialog
+        root = tk.Tk()
+        root.withdraw()
+        root.attributes('-topmost', True)
+        folder_selected = filedialog.askdirectory()
+        root.destroy()
+        return folder_selected if folder_selected else None
+    except Exception:
+        return None
+
+# Import repository_scanner safely
+try:
+    from repository_scanner import scan_repository
+except ImportError:
+    from scanners.source_scanner import scan_repository
+
 from mosca_engine import calculate_mosca_risk
 from pqc_recommendations import get_pqc_recommendations
 from cbom_formatter import generate_cbom
@@ -64,7 +83,6 @@ target_path = None
 if input_type == "ZIP Archive":
     uploaded_zip = st.file_uploader("Upload repository ZIP archive", type=["zip"])
     
-    # Store uploaded ZIP in session state to maintain state across reruns
     if uploaded_zip is not None:
         st.session_state["uploaded_zip_file"] = uploaded_zip
 
@@ -80,7 +98,7 @@ elif input_type == "Local Folder":
     
     with col1:
         if st.button("Browse..."):
-            chosen_dir = open_folder_dialog()
+            chosen_dir = safe_open_folder_dialog()
             if chosen_dir:
                 st.session_state["folder_path"] = chosen_dir
             else:
@@ -103,21 +121,13 @@ if target_path:
     st.info(f"Target path configured: `{target_path}`")
     if st.button("Run Cryptographic Scan", type="primary"):
         with st.spinner("Analyzing codebase and extracting cryptographic artefacts..."):
-            # 1. Execute core scanner
             findings = scan_repository(target_path)
-            
-            # 2. Risk Evaluation Engine
             risk_assessment = calculate_mosca_risk(findings, z_horizon)
-            
-            # 3. PQC Recommendations Engine
             recommendations = get_pqc_recommendations(findings)
-            
-            # 4. Generate Cryptographic Bill of Materials (CBOM)
             cbom = generate_cbom(findings)
 
             st.success("Analysis completed successfully!")
 
-            # Results Display Section
             st.divider()
             st.header("Unified Cryptographic Asset Inventory & Findings")
             if findings:
